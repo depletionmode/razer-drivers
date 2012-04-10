@@ -2,9 +2,7 @@
 #include <linux/hid.h>
 #include <linux/module.h>
 
-//#include "hid-ids.h"
-
-#define DRIVER_AUTHOR "David Kaplan, david@2of1.oef"
+#define DRIVER_AUTHOR "David Kaplan, david@2of1.org"
 #define DRIVER_DESC "Razer input device driver"
 
 #define TOGGLE_KEY(X,Y) input_report_key(X,Y,1); \
