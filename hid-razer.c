@@ -36,7 +36,7 @@ show_key##value(struct device *dev,                           \
                                                               \
     if (data->type == TYPE_NAGA)                              \
         return sprintf(buf, "%d\n",                           \
-                       data->naga_data.keymap[value]);        \
+                       data->naga_data.keymap[value-1]);      \
     return 0;                                                 \
 }                                                             \
                                                               \
@@ -53,11 +53,12 @@ store_key##value(struct device *dev,                          \
                                                               \
     if (data->type == TYPE_NAGA) {                            \
         int temp = simple_strtoul(buf, NULL, 10);             \
-        data->naga_data.keymap[value] = temp; }               \
+        data->naga_data.keymap[value-1] = temp;               \
+    }                                                         \
    return count;                                              \
 }                                                             \
 static DEVICE_ATTR(key##value,                                \
-                   S_IRUGO | S_IWUSR | S_IWGRP,               \
+                   S_IWUGO | S_IRUGO,                         \
                    show_key##value,                           \
                    store_key##value);                         \
 
@@ -137,9 +138,8 @@ static int razer_event(struct hid_device *hdev, struct hid_field *field,
         struct input_dev *input = field->hidinput->input;
         struct razer_data *data = hid_get_drvdata(hdev);
 
-hid_info(hdev, "value = %d", value);
         if (data->type == TYPE_NAGA) {
-            TOGGLE_KEY(input, data->naga_data.keymap[0]);
+            TOGGLE_KEY(input, data->naga_data.keymap[usage->code-2]);
             return -1;
         }
     }
@@ -149,7 +149,9 @@ hid_info(hdev, "value = %d", value);
 
 static void razer_remove(struct hid_device *hdev)
 {
-    if (hdev->type == HID_TYPE_OTHER && hdev->product == 0x0015 /* Naga */) {
+    struct razer_data *data = hid_get_drvdata(hdev);
+
+    if (hdev->product == 0x0015 /* Naga */) {
         device_remove_file(&hdev->dev, &dev_attr_key1);
         device_remove_file(&hdev->dev, &dev_attr_key2);
         device_remove_file(&hdev->dev, &dev_attr_key3);
@@ -163,6 +165,8 @@ static void razer_remove(struct hid_device *hdev)
         device_remove_file(&hdev->dev, &dev_attr_key11);
         device_remove_file(&hdev->dev, &dev_attr_key12);
     }
+
+    kfree(data);
 }
 
 static struct hid_driver razer_driver = {
